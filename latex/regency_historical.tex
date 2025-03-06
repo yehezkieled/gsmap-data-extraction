@@ -1,0 +1,178 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage{listings} 	%highlight source code
+\usepackage[left=1cm,right=1cm,top=1cm,bottom=1cm,includehead,includefoot,headheight=1.7cm,footskip=1.7cm]{geometry}	%page format
+\usepackage[svgnames]{xcolor}	%color package
+\usepackage{graphicx}	%importing pictures
+\usepackage{fancyhdr}	%adding header and footer
+\usepackage{hyperref}	%link formatting
+\usepackage{siunitx}	%degree symbol
+\usepackage{enumitem}
+\usepackage{titlesec}	%title formatting
+\usepackage{amssymb}	%math symbol
+
+%custom color
+\definecolor{sfsa}{rgb}{0, 176, 80}
+\definecolor{mygray}{rgb}{0.95, 0.95, 0.95}
+
+%title formatting
+\titleformat*{\section}{\LARGE\normalfont\bfseries}
+
+%link customization
+\hypersetup{
+ colorlinks	= true
+ urlcolor	= blue
+ linkcolor	= blue
+ citecolor	= red
+}
+
+%title
+\title{\textbf{\huge Regency Historical}}
+\author{\huge Yehezkiel}
+
+\lstset{% general command to set parameter(s)
+    basicstyle=\ttfamily, % use ttfamily for script font
+    keywordstyle=\color{blue}, % underlined bold blue keywords
+    identifierstyle=, % nothing happens
+    commentstyle=\color{DarkGreen}, % dark green comments
+    stringstyle=\color{DarkMagenta}, % typewriter type for strings
+    showstringspaces=false,
+    frame=single,
+    breaklines=true,
+    backgroundcolor=\color{mygray}
+} % no special string spaces
+
+%add SFSA logo as header
+\pagestyle{fancy}
+\fancyhead[R]{ % right
+   \includegraphics[width=4cm]{SFSAlogo.jpg}
+}
+
+
+\begin{document}
+
+%title
+\maketitle
+%delete page number
+\thispagestyle{empty}
+
+
+%next page
+\newpage
+%adding arabic page numbering
+\pagenumbering{arabic}
+
+
+%the usage of the script
+\section{Introduction}
+The purpose of the script is to devide the full historical data per regencies.
+
+
+\section{script}
+First, we need to make sure that there are no predefined variables.
+\begin{lstlisting}[language=R]
+ rm(list = ls(all = TRUE))
+\end{lstlisting}
+
+\vskip 0.5cm
+\noindent
+Then, import library
+\begin{lstlisting}[language=R]
+ library(stringr)
+\end{lstlisting}
+
+\vskip 0.5cm
+\noindent
+Declare working directory. "dirname" is a function to extract the directory of the script.
+\begin{lstlisting}[language=R]
+script_dir <- dirname(rstudioapi::getSourceEditorContext()$path)
+\end{lstlisting}
+
+\vskip 0.5cm
+\noindent
+Declare the historical data directory.
+\begin{lstlisting}[language=R]
+#historical data directory
+historical_dir <- paste0(
+  substr(script_dir, 1, unlist(gregexpr("/2. script", script_dir))),
+  "\\1. historical Indonesia"
+)
+\end{lstlisting}
+
+\vskip 0.5cm
+\noindent
+Import the pixel to village table.
+\begin{lstlisting}
+#import village to pixel table
+reference_table <- read.csv(paste0(
+  substr(script_dir, 1, unlist(gregexpr("/2. script", script_dir))),
+  "\\1. historical Indonesia",
+  "\\village_to_pixel_final gsmap.csv"
+))
+\end{lstlisting}
+
+\vskip 0.5cm
+\noindent
+Load the GSMaP historical data.
+\begin{lstlisting}
+#load the GSMaP historical data
+load(paste0(
+  substr(script_dir, 1, unlist(gregexpr("/2. script", script_dir))),
+  "\\1. historical Indonesia",
+  "\\final_historical_indo_gsmap_daily.RData"
+))
+\end{lstlisting}
+
+
+%new page
+\newpage
+
+
+\vskip 0.5cm
+\noindent
+Define the regency, if we want to create new product for new regencies, then this put the regency name into this variable.
+\begin{lstlisting}
+regencies <- c("Indramayu", "Purwakarta", "Subang", "Majalengka", "Cirebon", "Metro", "Lampung Tengah", "Lampung Selatan", "Lampung Timur", "Madiun", "Ngawi", "Nganjuk", "Malang",
+               "Tulungagung", "Jember", "Jombang", "Blitar", "Kediri")
+\end{lstlisting}
+
+\vskip 0.5cm
+\noindent
+Check whether every regencies is in the table
+\begin{lstlisting}
+'%!in%' <- Negate("%in%")
+for(i in regencies){
+  if (i %!in% reference_table$regency){
+    print(i)
+  }
+}
+\end{lstlisting}
+
+\vskip 0.5cm
+\noindent
+For loop to filter the table.
+\begin{lstlisting}
+for(i in regencies){
+  regency_table <- reference_table[which(reference_table$regency == i),]
+  pixel_regency <- unique(regency_table$pixel_name)
+  
+  hist_regency <- hist_data_gsmap_Indo_daily[,which(colnames(hist_data_gsmap_Indo_daily) %in% pixel_regency)]
+  hist_regency <- cbind(hist_data_gsmap_Indo_daily$date, hist_regency)
+  colnames(hist_regency)[1] <- "date"
+  
+  write.csv(hist_regency, paste0(historical_dir,"\\final_historical_", i,"_gsmap.csv"), row.names = FALSE)
+  write.csv(regency_table, paste0(historical_dir, "\\regency_table_", i,"_gsmap.csv"), row.names = FALSE)
+}
+\end{lstlisting}
+
+
+
+
+
+
+
+
+
+
+
+\end{document}
